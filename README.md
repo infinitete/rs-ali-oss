@@ -1,6 +1,6 @@
 # rs-ali-oss
 
-[![CI](https://github.com/AliSDK/rs-ali-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/AliSDK/rs-ali-oss/actions)
+[![CI](https://github.com/infinitete/rs-ali-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/infinitete/rs-ali-oss/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [中文文档](README.zh-CN.md)
