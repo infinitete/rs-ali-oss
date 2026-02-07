@@ -1,0 +1,36 @@
+[package]
+name = "rs-ali-oss"
+version = "0.1.0"
+edition = "2024"
+description = "Rust SDK for Alibaba Cloud Object Storage Service (OSS)"
+license = "MIT"
+
+[features]
+default = []
+sts = ["dep:rs-ali-sts"]
+
+[dependencies]
+reqwest = { version = "0.12", features = ["stream"] }
+serde = { version = "1", features = ["derive"] }
+quick-xml = { version = "0.37", features = ["serialize"] }
+thiserror = "2"
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+url = "2"
+bytes = "1"
+percent-encoding = "2"
+futures-util = "0.3"
+tracing = "0.1"
+md5 = { package = "md-5", version = "0.10" }
+zeroize = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["time"] }
+rs-ali-sts = { version = "0.1", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+serde_json = "1"
+wiremock = "0.6"
+temp-env = "0.3"

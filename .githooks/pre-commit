@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: fmt / clippy / test
+# Installed via: git config core.hooksPath .githooks
+#
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}[pre-commit]${NC} Running checks..."
+
+# 1. Format check
+echo -e "${YELLOW}[1/3]${NC} cargo fmt --check"
+if ! cargo fmt -- --check; then
+    echo -e "${RED}✗ Formatting check failed.${NC}"
+    echo -e "  Run ${GREEN}cargo fmt${NC} to fix."
+    exit 1
+fi
+echo -e "${GREEN}✓ Format OK${NC}"
+
+# 2. Clippy
+echo -e "${YELLOW}[2/3]${NC} cargo clippy"
+if ! cargo clippy -- -D warnings; then
+    echo -e "${RED}✗ Clippy found warnings/errors.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Clippy OK${NC}"
+
+# 3. Tests
+echo -e "${YELLOW}[3/3]${NC} cargo test"
+if ! cargo test; then
+    echo -e "${RED}✗ Tests failed.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Tests OK${NC}"
+
+echo -e "${GREEN}[pre-commit] All checks passed.${NC}"
