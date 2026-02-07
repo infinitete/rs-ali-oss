@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2024"
 description = "Rust SDK for Alibaba Cloud Object Storage Service (OSS)"
 license = "MIT"
+repository = "https://github.com/infinitete/rs-ali-oss"
+homepage = "https://github.com/infinitete/rs-ali-oss"
+readme = "README.md"
+keywords = ["alibaba-cloud", "oss", "object-storage", "s3", "sdk"]
+categories = ["api-bindings", "web-programming::http-client"]
 
 [features]
 default = []
