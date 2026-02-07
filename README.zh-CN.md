@@ -256,6 +256,8 @@ async fn main() -> Result<()> {
 
 欢迎贡献！请参阅 [贡献指南](CONTRIBUTING.md)。
 
+完整的开发计划请查看 [开发路线图](ROADMAP.md)。
+
 ## 配置
 
 ### 客户端构建器
