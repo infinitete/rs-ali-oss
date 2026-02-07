@@ -1,2 +1,4 @@
 /target
 .sisyphus/
+.env
+config.json

@@ -9,6 +9,7 @@ pub struct PresignedUrlRequest {
     pub(crate) bucket: BucketName,
     pub(crate) key: ObjectKey,
     pub(crate) expires: std::time::Duration,
+    #[allow(dead_code)]
     pub(crate) content_type: Option<String>,
     pub(crate) datetime: Option<chrono::DateTime<chrono::Utc>>,
 }

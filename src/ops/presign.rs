@@ -60,7 +60,8 @@ impl OssClient {
         self.generate_presigned_url("PUT", request)
     }
 
-    /// Internal: generate a presigned URL with V4 query-string signing.
+    /// V4 query-string presign: canonical URI always includes `/{bucket}/{key}`,
+    /// canonical headers and additional headers are both empty.
     fn generate_presigned_url(&self, method: &str, request: PresignedUrlRequest) -> Result<String> {
         let now = request.datetime.unwrap_or_else(Utc::now);
         let datetime_str = now.format("%Y%m%dT%H%M%SZ").to_string();
@@ -71,14 +72,7 @@ impl OssClient {
         let base_url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
         let host = base_url.host_str().unwrap_or_default().to_string();
 
-        // Build canonical URI from the raw key to avoid double-encoding
-        // (build_url already percent-encodes via url::Url::parse)
-        let raw_path = if self.config().use_path_style() {
-            format!("/{}/{}", request.bucket, request.key)
-        } else {
-            format!("/{}", request.key)
-        };
-        let path = canonical_uri(&raw_path);
+        let signing_uri = canonical_uri(&format!("/{}/{}", request.bucket, request.key));
 
         let credential = format!(
             "{}/{}/{}/oss/aliyun_v4_request",
@@ -86,15 +80,6 @@ impl OssClient {
             date_str,
             region_str,
         );
-
-        let (signed_headers, extra_headers) = if let Some(ref ct) = request.content_type {
-            (
-                "content-type;host".to_string(),
-                vec![("content-type".to_string(), ct.clone())],
-            )
-        } else {
-            ("host".to_string(), Vec::new())
-        };
 
         let mut query_params = vec![
             ("x-oss-credential".to_string(), credential.clone()),
@@ -104,7 +89,6 @@ impl OssClient {
                 "x-oss-signature-version".to_string(),
                 "OSS4-HMAC-SHA256".to_string(),
             ),
-            ("x-oss-signed-headers".to_string(), signed_headers.clone()),
         ];
 
         if let Some(token) = self.config().credentials().security_token() {
@@ -113,7 +97,6 @@ impl OssClient {
 
         query_params.sort_by(|a, b| a.0.cmp(&b.0));
 
-        // Build canonical query string (percent-encoded)
         let canonical_query = query_params
             .iter()
             .map(|(k, v)| {
@@ -126,20 +109,11 @@ impl OssClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        // Build canonical headers
-        let mut canonical_headers = String::new();
-        for (name, value) in &extra_headers {
-            canonical_headers.push_str(&format!("{name}:{value}\n"));
-        }
-        canonical_headers.push_str(&format!("host:{host}\n"));
-
-        // Build canonical request
         let canonical_request = format!(
-            "{}\n{}\n{}\n{}\n{}\nUNSIGNED-PAYLOAD",
-            method, path, canonical_query, canonical_headers, signed_headers,
+            "{}\n{}\n{}\n\n\nUNSIGNED-PAYLOAD",
+            method, signing_uri, canonical_query,
         );
 
-        // Build string-to-sign, derive signing key, and compute signature
         let string_to_sign =
             build_string_to_sign(&datetime_str, &date_str, region_str, &canonical_request);
         let signing_key = derive_signing_key(
@@ -149,10 +123,14 @@ impl OssClient {
         )?;
         let signature = calculate_signature(&signing_key, &string_to_sign)?;
 
-        // Construct final URL
+        let url_path = if self.config().use_path_style() {
+            canonical_uri(&format!("/{}/{}", request.bucket, request.key))
+        } else {
+            canonical_uri(&format!("/{}", request.key))
+        };
         let origin = format!("{}://{}", base_url.scheme(), host);
         let final_url = format!(
-            "{}{path}?{canonical_query}&x-oss-signature={signature}",
+            "{}{url_path}?{canonical_query}&x-oss-signature={signature}",
             origin,
         );
 
@@ -191,8 +169,8 @@ mod tests {
         assert!(url.contains("x-oss-date="));
         assert!(url.contains("x-oss-expires=3600"));
         assert!(url.contains("x-oss-signature-version=OSS4-HMAC-SHA256"));
-        assert!(url.contains("x-oss-signed-headers=host"));
         assert!(url.contains("x-oss-signature="));
+        assert!(!url.contains("x-oss-signed-headers"));
     }
 
     #[test]
@@ -212,8 +190,6 @@ mod tests {
         );
         assert!(url.contains("x-oss-expires=7200"));
         assert!(url.contains("x-oss-signature="));
-        // content-type is a signed header
-        assert!(url.contains("x-oss-signed-headers=content-type"));
     }
 
     #[test]
