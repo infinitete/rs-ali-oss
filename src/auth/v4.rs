@@ -18,6 +18,15 @@ use crate::types::Region;
 
 type HmacSha256 = Hmac<Sha256>;
 
+const UNSIGNED_PAYLOAD: &str = "UNSIGNED-PAYLOAD";
+
+/// Check if a header is a "default signed header" per OSS V4 spec.
+///
+/// Default signed headers are: `x-oss-*`, `content-type`, `content-md5`.
+fn is_default_signed_header(name: &str) -> bool {
+    name.starts_with("x-oss-") || name == "content-type" || name == "content-md5"
+}
+
 /// Percent-encode the URI path, preserving forward slashes.
 pub(crate) fn canonical_uri(path: &str) -> String {
     if path.is_empty() || path == "/" {
@@ -26,7 +35,6 @@ pub(crate) fn canonical_uri(path: &str) -> String {
     percent_encode(path.as_bytes(), URI_ENCODE_SET).to_string()
 }
 
-/// Sort and percent-encode query parameters.
 fn canonical_query_string(url: &url::Url) -> String {
     let mut pairs: Vec<(String, String)> = url
         .query_pairs()
@@ -40,17 +48,21 @@ fn canonical_query_string(url: &url::Url) -> String {
     pairs.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
     pairs
         .iter()
-        .map(|(k, v)| format!("{k}={v}"))
+        .map(|(k, v)| {
+            if v.is_empty() {
+                k.clone()
+            } else {
+                format!("{k}={v}")
+            }
+        })
         .collect::<Vec<_>>()
         .join("&")
 }
 
-/// Build canonical headers string and signed headers list.
-///
-/// Headers are lowercased, trimmed, and sorted by name.
 fn canonical_and_signed_headers(headers: &HeaderMap) -> (String, String) {
     let mut header_list: Vec<(String, String)> = headers
         .iter()
+        .filter(|(name, _)| is_default_signed_header(name.as_str()))
         .map(|(name, value)| {
             (
                 name.as_str().to_lowercase(),
@@ -65,32 +77,28 @@ fn canonical_and_signed_headers(headers: &HeaderMap) -> (String, String) {
         .map(|(k, v)| format!("{k}:{v}\n"))
         .collect::<String>();
 
-    let signed = header_list
-        .iter()
-        .map(|(k, _)| k.as_str())
-        .collect::<Vec<_>>()
-        .join(";");
+    // No user-specified additional headers
+    let additional = String::new();
 
-    (canonical, signed)
+    (canonical, additional)
 }
 
-/// Assemble the canonical request string and return it alongside the signed headers.
 fn build_canonical_request(
     method: &str,
+    resource_path: &str,
     url: &url::Url,
     headers: &HeaderMap,
-    payload_hash: &str,
 ) -> (String, String) {
-    let uri = canonical_uri(url.path());
+    let uri = canonical_uri(resource_path);
     let query = canonical_query_string(url);
-    let (canonical_hdrs, signed_hdrs) = canonical_and_signed_headers(headers);
+    let (canonical_hdrs, additional_hdrs) = canonical_and_signed_headers(headers);
 
     let canonical_request = format!(
         "{}\n{}\n{}\n{}\n{}\n{}",
-        method, uri, query, canonical_hdrs, signed_hdrs, payload_hash
+        method, uri, query, canonical_hdrs, additional_hdrs, UNSIGNED_PAYLOAD
     );
 
-    (canonical_request, signed_hdrs)
+    (canonical_request, additional_hdrs)
 }
 
 /// Build the string-to-sign from the datetime, scope, and canonical request.
@@ -158,21 +166,11 @@ pub fn sign_request(
     credentials: &Credentials,
     region: &Region,
     datetime: DateTime<Utc>,
+    resource_path: &str,
 ) -> crate::error::Result<()> {
     let datetime_str = datetime.format("%Y%m%dT%H%M%SZ").to_string();
     let date_str = datetime.format("%Y%m%d").to_string();
     let region_str: &str = region.as_ref();
-
-    // Compute payload hash
-    let payload_hash = if let Some(body) = req.body() {
-        if let Some(bytes) = body.as_bytes() {
-            hex::encode(Sha256::digest(bytes))
-        } else {
-            "UNSIGNED-PAYLOAD".to_string()
-        }
-    } else {
-        hex::encode(Sha256::digest(b""))
-    };
 
     // Set required headers BEFORE building canonical request
     let headers = req.headers_mut();
@@ -184,7 +182,7 @@ pub fn sign_request(
     );
     headers.insert(
         "x-oss-content-sha256",
-        payload_hash
+        UNSIGNED_PAYLOAD
             .parse()
             .map_err(|_| OssError::Auth("failed to set x-oss-content-sha256 header".to_string()))?,
     );
@@ -201,8 +199,8 @@ pub fn sign_request(
     // Build canonical request
     let method = req.method().as_str().to_string();
     let url = req.url().clone();
-    let (canonical_request, signed_headers) =
-        build_canonical_request(&method, &url, req.headers(), &payload_hash);
+    let (canonical_request, additional_headers) =
+        build_canonical_request(&method, resource_path, &url, req.headers());
 
     // Build string to sign
     let string_to_sign =
@@ -219,10 +217,17 @@ pub fn sign_request(
         date_str,
         region_str,
     );
-    let auth_value = format!(
-        "OSS4-HMAC-SHA256 Credential={}, SignedHeaders={}, Signature={}",
-        credential, signed_headers, signature,
-    );
+    let auth_value = if additional_headers.is_empty() {
+        format!(
+            "OSS4-HMAC-SHA256 Credential={},Signature={}",
+            credential, signature,
+        )
+    } else {
+        format!(
+            "OSS4-HMAC-SHA256 Credential={},AdditionalHeaders={},Signature={}",
+            credential, additional_headers, signature,
+        )
+    };
 
     req.headers_mut().insert(
         "authorization",
@@ -340,7 +345,14 @@ mod tests {
             .unwrap()
             .and_utc();
 
-        sign_request(&mut req, &creds, &region, dt).unwrap();
+        sign_request(
+            &mut req,
+            &creds,
+            &region,
+            dt,
+            "/examplebucket/exampleobject",
+        )
+        .unwrap();
 
         let auth = req
             .headers()
@@ -359,15 +371,21 @@ mod tests {
             .unwrap()
             .to_str()
             .unwrap();
-        let expected_sha = hex::encode(sha2::Sha256::digest(b"Hello OSS"));
-        assert_eq!(content_sha, expected_sha);
+        assert_eq!(content_sha, UNSIGNED_PAYLOAD);
 
         let mut req2 = client
             .put("https://examplebucket.oss-cn-hangzhou.aliyuncs.com/exampleobject")
             .body(b"Hello OSS".to_vec())
             .build()
             .unwrap();
-        sign_request(&mut req2, &creds, &region, dt).unwrap();
+        sign_request(
+            &mut req2,
+            &creds,
+            &region,
+            dt,
+            "/examplebucket/exampleobject",
+        )
+        .unwrap();
         let auth2 = req2
             .headers()
             .get("authorization")
@@ -410,13 +428,21 @@ mod tests {
         let region = crate::types::Region::new("cn-hangzhou").unwrap();
         let dt = chrono::Utc::now();
 
-        let result = sign_request(&mut req, &creds, &region, dt);
+        let result = sign_request(&mut req, &creds, &region, dt, "/my-bucket/test.txt");
         assert!(result.is_ok());
 
         assert!(req.headers().contains_key("x-oss-date"));
         assert!(req.headers().contains_key("x-oss-content-sha256"));
         assert!(req.headers().contains_key("authorization"));
         assert!(!req.headers().contains_key("x-oss-security-token"));
+
+        let content_sha = req
+            .headers()
+            .get("x-oss-content-sha256")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert_eq!(content_sha, UNSIGNED_PAYLOAD);
 
         let auth = req
             .headers()
@@ -426,7 +452,7 @@ mod tests {
             .unwrap();
         assert!(auth.starts_with("OSS4-HMAC-SHA256 Credential=test-access-key-id/"));
         assert!(auth.contains("cn-hangzhou/oss/aliyun_v4_request"));
-        assert!(auth.contains("SignedHeaders="));
+        assert!(!auth.contains("AdditionalHeaders"));
         assert!(auth.contains("Signature="));
     }
 
@@ -446,7 +472,7 @@ mod tests {
         let region = crate::types::Region::new("cn-hangzhou").unwrap();
         let dt = chrono::Utc::now();
 
-        sign_request(&mut req, &creds, &region, dt).unwrap();
+        sign_request(&mut req, &creds, &region, dt, "/my-bucket/test.txt").unwrap();
 
         assert!(req.headers().contains_key("x-oss-security-token"));
         let token = req

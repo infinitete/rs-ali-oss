@@ -25,6 +25,7 @@ impl OssClient {
             Some(&request.key),
             &[("uploads", "")],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let mut http_req = self.http_client().request(Method::POST, url);
 
         if let Some(ref ct) = request.content_type {
@@ -35,7 +36,7 @@ impl OssClient {
         }
 
         let http_req = http_req.build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let init_resp: InitiateMultipartUploadResponse = parse_xml(&body)?;
@@ -58,12 +59,13 @@ impl OssClient {
             ("uploadId", request.upload_id.as_str()),
         ];
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &query)?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self
             .http_client()
             .request(Method::PUT, url)
             .body(request.body)
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let etag = header_etag(&response);
 
@@ -77,6 +79,7 @@ impl OssClient {
     ) -> Result<CompleteMultipartUploadResponse> {
         let query = [("uploadId", request.upload_id.as_str())];
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &query)?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
 
         let xml_body = CompleteMultipartUploadXml {
             parts: request.parts,
@@ -89,7 +92,7 @@ impl OssClient {
             .header("content-type", "application/xml")
             .body(body_str)
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let complete_resp: CompleteMultipartUploadResponse = parse_xml(&body)?;
@@ -104,8 +107,9 @@ impl OssClient {
     ) -> Result<AbortMultipartUploadResponse> {
         let query = [("uploadId", request.upload_id.as_str())];
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &query)?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::DELETE, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let request_id = header_opt(&response, "x-oss-request-id");
 
@@ -124,8 +128,9 @@ impl OssClient {
 
         let query_refs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &query_refs)?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let list_resp: ListPartsResponse = parse_xml(&body)?;
@@ -157,8 +162,9 @@ impl OssClient {
 
         let query_refs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let url = self.build_url(Some(&request.bucket), None, &query_refs)?;
+        let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let resp: ListMultipartUploadsResponse = parse_xml(&body)?;

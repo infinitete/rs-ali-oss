@@ -179,19 +179,29 @@ impl OssClient {
 
     /// Sign and execute an HTTP request with automatic retry, interceptors,
     /// and optional request timeout.
-    pub(crate) async fn execute(&self, request: reqwest::Request) -> Result<reqwest::Response> {
+    pub(crate) async fn execute(
+        &self,
+        request: reqwest::Request,
+        resource_path: &str,
+    ) -> Result<reqwest::Response> {
         match self.config.timeout_config().request_timeout {
             Some(deadline) => {
-                match tokio::time::timeout(deadline, self.execute_inner(request)).await {
+                match tokio::time::timeout(deadline, self.execute_inner(request, resource_path))
+                    .await
+                {
                     Ok(result) => result,
                     Err(_) => Err(OssError::Timeout(deadline)),
                 }
             }
-            None => self.execute_inner(request).await,
+            None => self.execute_inner(request, resource_path).await,
         }
     }
 
-    async fn execute_inner(&self, request: reqwest::Request) -> Result<reqwest::Response> {
+    async fn execute_inner(
+        &self,
+        request: reqwest::Request,
+        resource_path: &str,
+    ) -> Result<reqwest::Response> {
         let retry_config = self.config.retry_config();
         let method = request.method().clone();
         let url_str = request.url().to_string();
@@ -243,6 +253,7 @@ impl OssClient {
                 self.config.credentials(),
                 self.config.region(),
                 Utc::now(),
+                resource_path,
             )?;
 
             if has_interceptors {

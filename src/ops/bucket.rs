@@ -22,6 +22,7 @@ impl OssClient {
         request: CreateBucketRequest,
     ) -> Result<CreateBucketResponse> {
         let url = self.build_url(Some(&request.bucket), None, &[])?;
+        let resource_path = format!("/{}/", request.bucket);
         let mut http_req = self.http_client().request(Method::PUT, url);
 
         let body = match request.storage_class {
@@ -44,7 +45,7 @@ impl OssClient {
             http_req.build()?
         };
 
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let request_id = header_opt(&response, "x-oss-request-id");
 
@@ -59,8 +60,9 @@ impl OssClient {
         request: DeleteBucketRequest,
     ) -> Result<DeleteBucketResponse> {
         let url = self.build_url(Some(&request.bucket), None, &[])?;
+        let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::DELETE, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let request_id = header_opt(&response, "x-oss-request-id");
 
@@ -85,7 +87,7 @@ impl OssClient {
         let query_refs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let url = self.build_url(None, None, &query_refs)?;
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, "/").await?;
 
         let body = response.text().await?;
         let list_resp: ListBucketsResponse = parse_xml(&body)?;
@@ -99,8 +101,9 @@ impl OssClient {
         request: GetBucketInfoRequest,
     ) -> Result<GetBucketInfoResponse> {
         let url = self.build_url(Some(&request.bucket), None, &[("bucketInfo", "")])?;
+        let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let info_resp: GetBucketInfoResponse = parse_xml(&body)?;
@@ -114,8 +117,9 @@ impl OssClient {
         request: GetBucketLocationRequest,
     ) -> Result<GetBucketLocationResponse> {
         let url = self.build_url(Some(&request.bucket), None, &[("location", "")])?;
+        let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let xml: crate::types::response::LocationConstraintXml = parse_xml(&body)?;

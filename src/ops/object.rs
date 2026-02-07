@@ -56,6 +56,7 @@ impl OssClient {
     /// ```
     pub async fn put_object(&self, request: PutObjectRequest) -> Result<PutObjectResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let mut http_req = self.http_client().request(Method::PUT, url);
 
         if let Some(ref ct) = request.content_type {
@@ -72,7 +73,7 @@ impl OssClient {
         }
 
         let http_req = http_req.body(request.body).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let etag = header_etag(&response);
         let request_id = header_opt(&response, "x-oss-request-id");
@@ -85,6 +86,7 @@ impl OssClient {
     /// Returns a streaming response — the body is NOT buffered in memory.
     pub async fn get_object(&self, request: GetObjectRequest) -> Result<GetObjectResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let mut http_req = self.http_client().request(Method::GET, url);
 
         if let Some(ref range) = request.range {
@@ -92,7 +94,7 @@ impl OssClient {
         }
 
         let http_req = http_req.build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let content_type = header_opt(&response, "content-type");
         let content_length = response
@@ -118,8 +120,9 @@ impl OssClient {
         request: DeleteObjectRequest,
     ) -> Result<DeleteObjectResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::DELETE, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let request_id = header_opt(&response, "x-oss-request-id");
 
@@ -129,8 +132,9 @@ impl OssClient {
     /// Retrieve object metadata without downloading the body.
     pub async fn head_object(&self, request: HeadObjectRequest) -> Result<HeadObjectResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::HEAD, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let content_type = header_opt(&response, "content-type");
         let content_length = response
@@ -202,8 +206,9 @@ impl OssClient {
 
         let query_refs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let url = self.build_url(Some(&request.bucket), None, &query_refs)?;
+        let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let list_resp: ListObjectsV2Response = parse_xml(&body)?;
@@ -217,6 +222,7 @@ impl OssClient {
     /// `/{source_bucket}/{source_key}` (percent-encoded).
     pub async fn copy_object(&self, request: CopyObjectRequest) -> Result<CopyObjectResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let mut http_req = self.http_client().request(Method::PUT, url);
 
         let encoded_key =
@@ -241,7 +247,7 @@ impl OssClient {
         }
 
         let http_req = http_req.build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         let copy_resp: CopyObjectResponse = parse_xml(&body)?;
@@ -258,6 +264,7 @@ impl OssClient {
         request: DeleteMultipleObjectsRequest,
     ) -> Result<DeleteMultipleObjectsResponse> {
         let url = self.build_url(Some(&request.bucket), None, &[("delete", "")])?;
+        let resource_path = format!("/{}/", request.bucket);
 
         let xml_body = DeleteMultipleObjectsXml {
             quiet: request.quiet,
@@ -281,7 +288,7 @@ impl OssClient {
             .header("content-md5", &content_md5)
             .body(body_str)
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let body = response.text().await?;
         if body.is_empty() {
@@ -306,6 +313,7 @@ impl OssClient {
             Some(&request.key),
             &[("restore", "")],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let xml_body = format!(
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
              <RestoreRequest>\
@@ -319,7 +327,7 @@ impl OssClient {
             .header("content-type", "application/xml")
             .body(xml_body)
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let request_id = header_opt(&response, "x-oss-request-id");
         Ok(RestoreObjectResponse { request_id })
     }
@@ -348,12 +356,13 @@ impl OssClient {
             Some(&request.key),
             &[("append", ""), ("position", &position_str)],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let mut http_req = self.http_client().request(Method::POST, url);
         if let Some(ref ct) = request.content_type {
             http_req = http_req.header("content-type", ct.as_str());
         }
         let http_req = http_req.body(request.body).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
 
         let next_append_position = header_opt(&response, "x-oss-next-append-position")
             .and_then(|s| s.parse::<u64>().ok())
@@ -374,8 +383,9 @@ impl OssClient {
         request: GetObjectAclRequest,
     ) -> Result<GetObjectAclResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[("acl", "")])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let body = response.text().await?;
         let resp: GetObjectAclResponse = parse_xml(&body)?;
         Ok(resp)
@@ -387,12 +397,13 @@ impl OssClient {
         request: PutObjectAclRequest,
     ) -> Result<PutObjectAclResponse> {
         let url = self.build_url(Some(&request.bucket), Some(&request.key), &[("acl", "")])?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self
             .http_client()
             .request(Method::PUT, url)
             .header("x-oss-object-acl", request.acl.to_string())
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let request_id = header_opt(&response, "x-oss-request-id");
         Ok(PutObjectAclResponse { request_id })
     }
@@ -407,8 +418,9 @@ impl OssClient {
             Some(&request.key),
             &[("tagging", "")],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::GET, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let body = response.text().await?;
         let resp: GetObjectTaggingResponse = parse_xml(&body)?;
         Ok(resp)
@@ -424,6 +436,7 @@ impl OssClient {
             Some(&request.key),
             &[("tagging", "")],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let tag_set = TagSet {
             tags: request
                 .tags
@@ -440,7 +453,7 @@ impl OssClient {
             .header("content-type", "application/xml")
             .body(body_str)
             .build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let request_id = header_opt(&response, "x-oss-request-id");
         Ok(PutObjectTaggingResponse { request_id })
     }
@@ -455,8 +468,9 @@ impl OssClient {
             Some(&request.key),
             &[("tagging", "")],
         )?;
+        let resource_path = format!("/{}/{}", request.bucket, request.key);
         let http_req = self.http_client().request(Method::DELETE, url).build()?;
-        let response = self.execute(http_req).await?;
+        let response = self.execute(http_req, &resource_path).await?;
         let request_id = header_opt(&response, "x-oss-request-id");
         Ok(DeleteObjectTaggingResponse { request_id })
     }
