@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-02-08
+
+### Changed
+
+- **V4 签名重构** — Canonical URI 改为从显式 `resource_path` 构造，解决 virtual-hosted 模式下 URL path 与签名路径不一致的问题
+- Payload hash 统一使用 `UNSIGNED-PAYLOAD`，移除对 body 的 SHA256 计算，与官方 Go SDK 行为一致
+- Authorization header 采用 OSS V4 规范的 `AdditionalHeaders` 模式，替代 AWS 风格的 `SignedHeaders`
+- Canonical query string 空值参数不再追加等号（如 `?uploads` → `uploads`），符合 OSS V4 规范
+
+### Fixed
+
+- 修正 CI 徽章仓库路径
+
 ## [0.1.0] - 2026-02-07
 
 ### Added
@@ -58,4 +71,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation for bucket names, object keys, metadata keys, part numbers, expiry durations
 - Credential security: zeroize on drop, redacted `Debug` output, HTTPS enforced by default
 
+[0.1.1]: https://github.com/infinitete/rs-ali-oss/releases/tag/v0.1.1
 [0.1.0]: https://github.com/infinitete/rs-ali-oss/releases/tag/v0.1.0
