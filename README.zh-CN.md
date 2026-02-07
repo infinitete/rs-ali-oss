@@ -254,7 +254,7 @@ async fn main() -> Result<()> {
 
 </details>
 
-欢迎贡献！如有 [CONTRIBUTING.md](CONTRIBUTING.md)，请参阅其中的指南。
+欢迎贡献！请参阅 [贡献指南](CONTRIBUTING.md)。
 
 ## 配置
 

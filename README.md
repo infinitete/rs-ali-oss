@@ -254,7 +254,7 @@ This SDK focuses on **core data-plane operations**. Bucket management/policy API
 
 </details>
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) if available.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Configuration
 
