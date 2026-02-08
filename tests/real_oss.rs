@@ -31,12 +31,17 @@ fn make_client(env: &HashMap<String, String>) -> OssClient {
         .get("sts.access_key_secret")
         .expect("missing sts.access_key_secret");
     let region = env.get("oss.region").expect("missing oss.region");
+    let endpoint = env
+        .get("oss.endpoint")
+        .or_else(|| env.get("oss.endingpoint"))
+        .expect("missing oss.endpoint");
 
     OssClient::from_builder(
         ClientBuilder::new()
             .access_key_id(ak)
             .access_key_secret(sk)
             .region(region)
+            .endpoint(endpoint)
             .max_retries(0),
     )
     .expect("Failed to build OssClient")
@@ -47,6 +52,10 @@ fn make_sts_client(
     sts_creds: &rs_ali_sts::Credentials,
 ) -> OssClient {
     let region = env.get("oss.region").expect("missing oss.region");
+    let endpoint = env
+        .get("oss.endpoint")
+        .or_else(|| env.get("oss.endingpoint"))
+        .expect("missing oss.endpoint");
 
     OssClient::from_builder(
         ClientBuilder::new()
@@ -54,6 +63,7 @@ fn make_sts_client(
             .access_key_secret(&sts_creds.access_key_secret)
             .security_token(&sts_creds.security_token)
             .region(region)
+            .endpoint(endpoint)
             .max_retries(0),
     )
     .expect("Failed to build STS OssClient")
@@ -350,4 +360,28 @@ async fn test_sts_presigned_url() {
         .await
         .expect("STS cleanup delete failed");
     println!("STS Presign cleanup OK");
+}
+
+#[tokio::test]
+async fn test_sts_list_objects_real() {
+    let env = load_env();
+    let sts_creds = assume_role(&env).await;
+    let client = make_sts_client(&env, &sts_creds);
+    let b = bucket(&env);
+
+    let resp = client
+        .list_objects_v2(
+            ListObjectsV2RequestBuilder::new()
+                .bucket(b)
+                .max_keys(5)
+                .build()
+                .unwrap(),
+        )
+        .await
+        .expect("STS list_objects_v2 failed");
+
+    println!("STS ListObjects OK: {} objects", resp.contents.len());
+    for obj in &resp.contents {
+        println!("  - {} ({} bytes)", obj.key, obj.size);
+    }
 }

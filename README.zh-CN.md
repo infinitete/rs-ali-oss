@@ -263,25 +263,59 @@ async fn main() -> Result<()> {
 ### 客户端构建器
 
 ```rust
-use rs_ali_oss::ClientBuilder;
+use rs_ali_oss::{OssClient, ClientBuilder};
 use std::time::Duration;
 
-let config = ClientBuilder::new()
-    .access_key_id("LTAI5tXXXX")
-    .access_key_secret("your-secret")
-    .region("cn-hangzhou")
-    // 可选配置
-    .endpoint("https://oss-cn-hangzhou.aliyuncs.com")
-    .use_path_style(false)
-    .max_retries(3)
-    .base_retry_delay(Duration::from_millis(200))
-    .max_retry_delay(Duration::from_secs(30))
-    .connect_timeout(Duration::from_secs(10))
-    .read_timeout(Duration::from_secs(30))
-    .request_timeout(Duration::from_secs(300))
-    .pool_max_idle_per_host(10)
-    .pool_idle_timeout(Duration::from_secs(90))
-    .build()?;
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou")
+        // 可选配置
+        .endpoint("https://oss-cn-hangzhou.aliyuncs.com")
+        .max_retries(3)
+        .base_retry_delay(Duration::from_millis(200))
+        .max_retry_delay(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .read_timeout(Duration::from_secs(30))
+        .request_timeout(Duration::from_secs(300))
+        .pool_max_idle_per_host(10)
+        .pool_idle_timeout(Duration::from_secs(90)),
+)?;
+```
+
+### Endpoint 与 URL 风格
+
+SDK 默认使用虚拟托管风格的 URL（`{bucket}.oss-{region}.aliyuncs.com`）。
+设置自定义 endpoint 时，SDK 会自动将 bucket 名称作为子域名拼接到 endpoint 主机前：
+
+```rust
+// 自定义 endpoint — SDK 生成: https://my-bucket.oss-cn-chengdu.aliyuncs.com/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-chengdu")
+        .endpoint("https://oss-cn-chengdu.aliyuncs.com"),
+)?;
+
+// 不设置 endpoint — SDK 自动生成: https://my-bucket.oss-cn-hangzhou.aliyuncs.com/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou"),
+)?;
+
+// 路径风格（bucket 放在 URL 路径中而非子域名）:
+// https://oss-cn-hangzhou.aliyuncs.com/my-bucket/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou")
+        .use_path_style(true),
+)?;
 ```
 
 ### 凭证提供者
@@ -308,7 +342,7 @@ let chain = ProviderChain::default_chain()
 ### STS 临时凭证
 
 ```rust
-use rs_ali_oss::ClientBuilder;
+use rs_ali_oss::{OssClient, ClientBuilder};
 
 let client = OssClient::from_builder(
     ClientBuilder::new()

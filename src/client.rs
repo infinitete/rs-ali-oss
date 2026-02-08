@@ -133,7 +133,17 @@ impl OssClient {
 
     pub(crate) fn endpoint(&self, bucket: Option<&BucketName>) -> String {
         if let Some(custom) = self.config.endpoint() {
-            return custom.trim_end_matches('/').to_string();
+            let base = custom.trim_end_matches('/');
+            if !self.config.use_path_style()
+                && let Some(b) = bucket
+                && let Ok(mut url) = url::Url::parse(base)
+                && let Some(host) = url.host_str()
+            {
+                let new_host = format!("{}.{}", b, host);
+                let _ = url.set_host(Some(&new_host));
+                return url.as_str().trim_end_matches('/').to_string();
+            }
+            return base.to_string();
         }
         let region: &str = self.config.region().as_ref();
         match bucket {
@@ -458,7 +468,7 @@ mod tests {
         let client = test_client_custom_endpoint();
         let bucket = BucketName::new("my-bucket").unwrap();
         let ep = client.endpoint(Some(&bucket));
-        assert_eq!(ep, "https://custom.oss.example.com");
+        assert_eq!(ep, "https://my-bucket.custom.oss.example.com");
     }
 
     #[test]

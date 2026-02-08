@@ -263,25 +263,59 @@ For the full development plan, see the [Roadmap](ROADMAP.md).
 ### Client Builder
 
 ```rust
-use rs_ali_oss::ClientBuilder;
+use rs_ali_oss::{OssClient, ClientBuilder};
 use std::time::Duration;
 
-let config = ClientBuilder::new()
-    .access_key_id("LTAI5tXXXX")
-    .access_key_secret("your-secret")
-    .region("cn-hangzhou")
-    // Optional settings
-    .endpoint("https://oss-cn-hangzhou.aliyuncs.com")
-    .use_path_style(false)
-    .max_retries(3)
-    .base_retry_delay(Duration::from_millis(200))
-    .max_retry_delay(Duration::from_secs(30))
-    .connect_timeout(Duration::from_secs(10))
-    .read_timeout(Duration::from_secs(30))
-    .request_timeout(Duration::from_secs(300))
-    .pool_max_idle_per_host(10)
-    .pool_idle_timeout(Duration::from_secs(90))
-    .build()?;
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou")
+        // Optional settings
+        .endpoint("https://oss-cn-hangzhou.aliyuncs.com")
+        .max_retries(3)
+        .base_retry_delay(Duration::from_millis(200))
+        .max_retry_delay(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .read_timeout(Duration::from_secs(30))
+        .request_timeout(Duration::from_secs(300))
+        .pool_max_idle_per_host(10)
+        .pool_idle_timeout(Duration::from_secs(90)),
+)?;
+```
+
+### Endpoint & URL Style
+
+By default, the SDK constructs virtual-hosted style URLs (`{bucket}.oss-{region}.aliyuncs.com`).
+When you set a custom endpoint, the SDK automatically prepends the bucket name to the endpoint host:
+
+```rust
+// Custom endpoint — SDK generates: https://my-bucket.oss-cn-chengdu.aliyuncs.com/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-chengdu")
+        .endpoint("https://oss-cn-chengdu.aliyuncs.com"),
+)?;
+
+// No endpoint — SDK auto-generates: https://my-bucket.oss-cn-hangzhou.aliyuncs.com/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou"),
+)?;
+
+// Path-style (bucket in URL path instead of subdomain):
+// https://oss-cn-hangzhou.aliyuncs.com/my-bucket/key
+let client = OssClient::from_builder(
+    ClientBuilder::new()
+        .access_key_id("LTAI5tXXXX")
+        .access_key_secret("your-secret")
+        .region("cn-hangzhou")
+        .use_path_style(true),
+)?;
 ```
 
 ### Credential Providers
@@ -308,7 +342,7 @@ let chain = ProviderChain::default_chain()
 ### STS Temporary Credentials
 
 ```rust
-use rs_ali_oss::ClientBuilder;
+use rs_ali_oss::{OssClient, ClientBuilder};
 
 let client = OssClient::from_builder(
     ClientBuilder::new()
