@@ -30,6 +30,7 @@ pub use ops::transfer::{
 };
 pub use progress::{NoopProgressListener, ProgressListener, TransferKind, TransferProgress};
 pub use types::common::{
-    BucketName, MetadataDirective, ObjectAcl, ObjectKey, Region, StorageClass,
+    BucketAcl, BucketName, CorsHttpMethod, MetadataDirective, ObjectAcl, ObjectKey, Region,
+    ServerSideEncryption, StorageClass, VersioningStatus,
 };
 pub use types::response::ObjectBody;

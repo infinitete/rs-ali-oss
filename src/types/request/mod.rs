@@ -30,11 +30,32 @@ fn validate_metadata_key(key: &str) -> Result<()> {
     Ok(())
 }
 
+pub(crate) use bucket::{
+    CorsConfigurationXml, CorsRuleXml, EncryptionConfigurationXml, EncryptionRuleXml,
+    LifecycleConfigurationXml, LifecycleExpirationXml, LifecycleRuleXml, LifecycleTransitionXml,
+    LoggingConfigurationXml, LoggingEnabledXml, RefererBlacklistXml, RefererConfigurationXml,
+    RefererListXml, VersioningConfigurationXml,
+};
 pub use bucket::{
-    CreateBucketRequest, CreateBucketRequestBuilder, DeleteBucketRequest,
-    DeleteBucketRequestBuilder, GetBucketInfoRequest, GetBucketInfoRequestBuilder,
-    GetBucketLocationRequest, GetBucketLocationRequestBuilder, ListBucketsRequest,
-    ListBucketsRequestBuilder,
+    CorsRule, CreateBucketRequest, CreateBucketRequestBuilder, DeleteBucketCorsRequest,
+    DeleteBucketCorsRequestBuilder, DeleteBucketEncryptionRequest,
+    DeleteBucketEncryptionRequestBuilder, DeleteBucketLifecycleRequest,
+    DeleteBucketLifecycleRequestBuilder, DeleteBucketLoggingRequest,
+    DeleteBucketLoggingRequestBuilder, DeleteBucketPolicyRequest, DeleteBucketPolicyRequestBuilder,
+    DeleteBucketRequest, DeleteBucketRequestBuilder, GetBucketAclRequest,
+    GetBucketAclRequestBuilder, GetBucketCorsRequest, GetBucketCorsRequestBuilder,
+    GetBucketEncryptionRequest, GetBucketEncryptionRequestBuilder, GetBucketInfoRequest,
+    GetBucketInfoRequestBuilder, GetBucketLifecycleRequest, GetBucketLifecycleRequestBuilder,
+    GetBucketLocationRequest, GetBucketLocationRequestBuilder, GetBucketLoggingRequest,
+    GetBucketLoggingRequestBuilder, GetBucketPolicyRequest, GetBucketPolicyRequestBuilder,
+    GetBucketRefererRequest, GetBucketRefererRequestBuilder, GetBucketVersioningRequest,
+    GetBucketVersioningRequestBuilder, LifecycleExpiration, LifecycleRule, LifecycleRuleStatus,
+    LifecycleTransition, ListBucketsRequest, ListBucketsRequestBuilder, PutBucketAclRequest,
+    PutBucketAclRequestBuilder, PutBucketCorsRequest, PutBucketCorsRequestBuilder,
+    PutBucketEncryptionRequest, PutBucketEncryptionRequestBuilder, PutBucketLifecycleRequest,
+    PutBucketLifecycleRequestBuilder, PutBucketLoggingRequest, PutBucketLoggingRequestBuilder,
+    PutBucketPolicyRequest, PutBucketPolicyRequestBuilder, PutBucketRefererRequest,
+    PutBucketRefererRequestBuilder, PutBucketVersioningRequest, PutBucketVersioningRequestBuilder,
 };
 pub use multipart::{
     AbortMultipartUploadRequest, AbortMultipartUploadRequestBuilder,

@@ -6,7 +6,7 @@ use std::fmt;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use super::common::StorageClass;
+use super::common::{ServerSideEncryption, StorageClass};
 
 /// Response from a PutObject operation.
 #[derive(Debug)]
@@ -496,6 +496,306 @@ pub struct PutObjectAclResponse {
     pub request_id: Option<String>,
 }
 
+/// Response from a PutBucketAcl operation.
+#[derive(Debug)]
+pub struct PutBucketAclResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketAcl operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "AccessControlPolicy")]
+pub struct GetBucketAclResponse {
+    /// Bucket owner information.
+    #[serde(rename = "Owner")]
+    pub owner: BucketOwner,
+    /// Access control list.
+    #[serde(rename = "AccessControlList")]
+    pub access_control_list: BucketAccessControlList,
+}
+
+/// Bucket owner information.
+#[derive(Debug, Clone, Deserialize)]
+pub struct BucketOwner {
+    /// User ID of the bucket owner.
+    #[serde(rename = "ID")]
+    pub id: String,
+    /// Display name of the bucket owner.
+    #[serde(rename = "DisplayName")]
+    pub display_name: String,
+}
+
+/// Access control list for bucket ACL.
+#[derive(Debug, Clone, Deserialize)]
+pub struct BucketAccessControlList {
+    /// The granted permission.
+    #[serde(rename = "Grant")]
+    pub grant: crate::types::common::BucketAcl,
+}
+
+/// Response from a PutBucketCors operation.
+#[derive(Debug)]
+pub struct PutBucketCorsResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketCors operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "CORSConfiguration")]
+pub struct GetBucketCorsResponse {
+    /// CORS rules.
+    #[serde(rename = "CORSRule", default)]
+    pub cors_rules: Vec<CorsRuleResponse>,
+    /// Whether to return Vary: Origin header.
+    #[serde(rename = "ResponseVary", default)]
+    pub response_vary: bool,
+}
+
+/// A CORS rule from GetBucketCors response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CorsRuleResponse {
+    /// Allowed origins.
+    #[serde(rename = "AllowedOrigin", default)]
+    pub allowed_origins: Vec<String>,
+    /// Allowed HTTP methods.
+    #[serde(rename = "AllowedMethod", default)]
+    pub allowed_methods: Vec<String>,
+    /// Allowed headers (optional).
+    #[serde(rename = "AllowedHeader", default)]
+    pub allowed_headers: Vec<String>,
+    /// Expose headers (optional).
+    #[serde(rename = "ExposeHeader", default)]
+    pub expose_headers: Vec<String>,
+    /// Max age seconds (optional).
+    #[serde(rename = "MaxAgeSeconds", default)]
+    pub max_age_seconds: Option<u32>,
+}
+
+/// Response from a DeleteBucketCors operation.
+#[derive(Debug)]
+pub struct DeleteBucketCorsResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a PutBucketReferer operation.
+#[derive(Debug)]
+pub struct PutBucketRefererResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketReferer operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "RefererConfiguration")]
+pub struct GetBucketRefererResponse {
+    /// Whether to allow empty Referer.
+    #[serde(rename = "AllowEmptyReferer")]
+    pub allow_empty_referer: bool,
+    /// Whether to truncate query string when matching Referer.
+    #[serde(rename = "AllowTruncateQueryString", default)]
+    pub allow_truncate_query_string: Option<bool>,
+    /// Whether to truncate path when matching Referer.
+    #[serde(rename = "TruncatePath", default)]
+    pub truncate_path: Option<bool>,
+    /// Referer whitelist.
+    #[serde(rename = "RefererList", default)]
+    pub referer_list: RefererList,
+    /// Referer blacklist (optional).
+    #[serde(rename = "RefererBlacklist", default)]
+    pub referer_blacklist: Option<RefererBlacklist>,
+}
+
+/// Referer whitelist container.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct RefererList {
+    /// Referer entries in the whitelist.
+    #[serde(rename = "Referer", default)]
+    pub referers: Vec<String>,
+}
+
+/// Referer blacklist container.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct RefererBlacklist {
+    /// Referer entries in the blacklist.
+    #[serde(rename = "Referer", default)]
+    pub referers: Vec<String>,
+}
+
+/// Response from a PutBucketPolicy operation.
+#[derive(Debug)]
+pub struct PutBucketPolicyResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketPolicy operation.
+///
+/// The policy is returned as a raw JSON string since OSS
+/// bucket policies use the JSON format (not XML).
+#[derive(Debug)]
+pub struct GetBucketPolicyResponse {
+    /// The bucket policy as a JSON string.
+    pub policy: String,
+}
+
+/// Response from a DeleteBucketPolicy operation.
+#[derive(Debug)]
+pub struct DeleteBucketPolicyResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a PutBucketVersioning operation.
+#[derive(Debug)]
+pub struct PutBucketVersioningResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketVersioning operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "VersioningConfiguration")]
+pub struct GetBucketVersioningResponse {
+    /// The versioning status.
+    #[serde(rename = "Status")]
+    pub status: Option<crate::types::common::VersioningStatus>,
+}
+
+/// Response from a PutBucketLifecycle operation.
+#[derive(Debug)]
+pub struct PutBucketLifecycleResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketLifecycle operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "LifecycleConfiguration")]
+pub struct GetBucketLifecycleResponse {
+    /// Lifecycle rules.
+    #[serde(rename = "Rule", default)]
+    pub rules: Vec<LifecycleRuleResponse>,
+}
+
+/// A lifecycle rule from GetBucketLifecycle response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LifecycleRuleResponse {
+    /// Rule ID.
+    #[serde(rename = "ID", default)]
+    pub id: String,
+    /// Object prefix.
+    #[serde(rename = "Prefix", default)]
+    pub prefix: String,
+    /// Rule status.
+    #[serde(rename = "Status")]
+    pub status: String,
+    /// Expiration configuration.
+    #[serde(rename = "Expiration", default)]
+    pub expiration: Option<LifecycleExpirationResponse>,
+    /// Storage class transitions.
+    #[serde(rename = "Transition", default)]
+    pub transitions: Vec<LifecycleTransitionResponse>,
+}
+
+/// Expiration configuration from GetBucketLifecycle.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LifecycleExpirationResponse {
+    /// Days until expiration.
+    #[serde(rename = "Days", default)]
+    pub days: Option<u32>,
+    /// Expiration date.
+    #[serde(rename = "Date", default)]
+    pub date: Option<String>,
+}
+
+/// Transition configuration from GetBucketLifecycle.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LifecycleTransitionResponse {
+    /// Target storage class.
+    #[serde(rename = "StorageClass")]
+    pub storage_class: StorageClass,
+    /// Days until transition.
+    #[serde(rename = "Days")]
+    pub days: u32,
+}
+
+/// Response from a DeleteBucketLifecycle operation.
+#[derive(Debug)]
+pub struct DeleteBucketLifecycleResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a PutBucketEncryption operation.
+#[derive(Debug)]
+pub struct PutBucketEncryptionResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketEncryption operation (XML-deserialized).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "ServerSideEncryptionConfiguration")]
+pub struct GetBucketEncryptionResponse {
+    /// Encryption configuration.
+    #[serde(rename = "Rule")]
+    pub rule: EncryptionRuleResponse,
+}
+
+/// Encryption rule from GetBucketEncryption response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EncryptionRuleResponse {
+    /// Encryption algorithm.
+    #[serde(rename = "ApplyServerSideEncryptionByDefault")]
+    pub apply_server_side_encryption_by_default: ServerSideEncryption,
+}
+
+/// Response from a DeleteBucketEncryption operation.
+#[derive(Debug)]
+pub struct DeleteBucketEncryptionResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a PutBucketLogging operation.
+#[derive(Debug)]
+pub struct PutBucketLoggingResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
+/// Response from a GetBucketLogging operation (XML-deserialized).
+///
+/// When logging is not configured for the bucket, `logging_enabled` will be `None`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "BucketLoggingStatus")]
+pub struct GetBucketLoggingResponse {
+    /// Logging configuration (None if logging is not enabled).
+    #[serde(rename = "LoggingEnabled", default)]
+    pub logging_enabled: Option<LoggingEnabled>,
+}
+
+/// Logging enabled configuration from GetBucketLogging.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LoggingEnabled {
+    /// Target bucket that receives the logs.
+    #[serde(rename = "TargetBucket")]
+    pub target_bucket: String,
+    /// Prefix for log objects in the target bucket.
+    #[serde(rename = "TargetPrefix", default)]
+    pub target_prefix: String,
+}
+
+/// Response from a DeleteBucketLogging operation.
+#[derive(Debug)]
+pub struct DeleteBucketLoggingResponse {
+    /// OSS request ID.
+    pub request_id: Option<String>,
+}
+
 /// Response from a GetObjectTagging operation (XML-deserialized).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "Tagging")]
@@ -856,6 +1156,46 @@ mod tests {
     }
 
     #[test]
+    fn deserialize_get_bucket_acl_response() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<AccessControlPolicy>
+    <Owner>
+        <ID>0022012****</ID>
+        <DisplayName>user_example</DisplayName>
+    </Owner>
+    <AccessControlList>
+        <Grant>public-read</Grant>
+    </AccessControlList>
+</AccessControlPolicy>"#;
+        let resp: GetBucketAclResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.access_control_list.grant,
+            crate::types::common::BucketAcl::PublicRead
+        );
+        assert_eq!(resp.owner.id, "0022012****");
+        assert_eq!(resp.owner.display_name, "user_example");
+    }
+
+    #[test]
+    fn deserialize_get_bucket_acl_private() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<AccessControlPolicy>
+    <Owner>
+        <ID>0022012****</ID>
+        <DisplayName>user_example</DisplayName>
+    </Owner>
+    <AccessControlList>
+        <Grant>private</Grant>
+    </AccessControlList>
+</AccessControlPolicy>"#;
+        let resp: GetBucketAclResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.access_control_list.grant,
+            crate::types::common::BucketAcl::Private
+        );
+    }
+
+    #[test]
     fn deserialize_get_object_tagging_response() {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <Tagging>
@@ -900,5 +1240,264 @@ mod tests {
         let xml = quick_xml::se::to_string(&wrapper).unwrap();
         assert!(xml.contains("<Key>env</Key>"));
         assert!(xml.contains("<Value>prod</Value>"));
+    }
+
+    #[test]
+    fn deserialize_get_bucket_cors_response() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<CORSConfiguration>
+    <CORSRule>
+      <AllowedOrigin>*</AllowedOrigin>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedMethod>PUT</AllowedMethod>
+      <AllowedHeader>Authorization</AllowedHeader>
+    </CORSRule>
+    <ResponseVary>false</ResponseVary>
+</CORSConfiguration>"#;
+        let resp: GetBucketCorsResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.cors_rules.len(), 1);
+        assert_eq!(resp.cors_rules[0].allowed_origins[0], "*");
+        assert_eq!(resp.cors_rules[0].allowed_methods.len(), 2);
+        assert_eq!(resp.cors_rules[0].allowed_methods[0], "GET");
+        assert_eq!(resp.cors_rules[0].allowed_methods[1], "PUT");
+        assert!(!resp.response_vary);
+    }
+
+    #[test]
+    fn deserialize_get_bucket_cors_multiple_rules() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<CORSConfiguration>
+    <CORSRule>
+      <AllowedOrigin>*</AllowedOrigin>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedHeader>*</AllowedHeader>
+      <ExposeHeader>x-oss-test</ExposeHeader>
+      <MaxAgeSeconds>100</MaxAgeSeconds>
+    </CORSRule>
+    <CORSRule>
+      <AllowedOrigin>http://example.com</AllowedOrigin>
+      <AllowedOrigin>http://example.net</AllowedOrigin>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedHeader>Authorization</AllowedHeader>
+      <ExposeHeader>x-oss-test</ExposeHeader>
+      <ExposeHeader>x-oss-test1</ExposeHeader>
+      <MaxAgeSeconds>100</MaxAgeSeconds>
+    </CORSRule>
+    <ResponseVary>true</ResponseVary>
+</CORSConfiguration>"#;
+        let resp: GetBucketCorsResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.cors_rules.len(), 2);
+        assert_eq!(resp.cors_rules[0].allowed_origins[0], "*");
+        assert_eq!(resp.cors_rules[1].allowed_origins.len(), 2);
+        assert!(resp.response_vary);
+    }
+
+    #[test]
+    fn deserialize_get_bucket_referer_response() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+    <AllowEmptyReferer>true</AllowEmptyReferer>
+    <AllowTruncateQueryString>true</AllowTruncateQueryString>
+    <TruncatePath>true</TruncatePath>
+    <RefererList>
+      <Referer>http://www.aliyun.com</Referer>
+      <Referer>https://www.aliyun.com</Referer>
+    </RefererList>
+</RefererConfiguration>"#;
+        let resp: GetBucketRefererResponse = quick_xml::de::from_str(xml).unwrap();
+        assert!(resp.allow_empty_referer);
+        assert_eq!(resp.allow_truncate_query_string, Some(true));
+        assert_eq!(resp.truncate_path, Some(true));
+        assert_eq!(resp.referer_list.referers.len(), 2);
+        assert_eq!(resp.referer_list.referers[0], "http://www.aliyun.com");
+    }
+
+    #[test]
+    fn deserialize_get_bucket_referer_with_blacklist() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+    <AllowEmptyReferer>false</AllowEmptyReferer>
+    <RefererList>
+      <Referer>http://www.aliyun.com</Referer>
+    </RefererList>
+    <RefererBlacklist>
+      <Referer>http://www.refuse.com</Referer>
+      <Referer>https://*.hack.com</Referer>
+    </RefererBlacklist>
+</RefererConfiguration>"#;
+        let resp: GetBucketRefererResponse = quick_xml::de::from_str(xml).unwrap();
+        assert!(!resp.allow_empty_referer);
+        assert!(resp.referer_blacklist.is_some());
+        let blacklist = resp.referer_blacklist.unwrap();
+        assert_eq!(blacklist.referers.len(), 2);
+    }
+
+    #[test]
+    fn deserialize_get_bucket_versioning_response_enabled() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<VersioningConfiguration>
+    <Status>Enabled</Status>
+</VersioningConfiguration>"#;
+        let resp: GetBucketVersioningResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.status,
+            Some(crate::types::common::VersioningStatus::Enabled)
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_versioning_response_suspended() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<VersioningConfiguration>
+    <Status>Suspended</Status>
+</VersioningConfiguration>"#;
+        let resp: GetBucketVersioningResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.status,
+            Some(crate::types::common::VersioningStatus::Suspended)
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_versioning_response_no_status() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<VersioningConfiguration>
+</VersioningConfiguration>"#;
+        let resp: GetBucketVersioningResponse = quick_xml::de::from_str(xml).unwrap();
+        assert!(resp.status.is_none());
+    }
+
+    #[test]
+    fn deserialize_get_bucket_lifecycle_response() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+    <Rule>
+        <ID>delete-logs</ID>
+        <Prefix>logs/</Prefix>
+        <Status>Enabled</Status>
+        <Expiration>
+            <Days>30</Days>
+        </Expiration>
+    </Rule>
+</LifecycleConfiguration>"#;
+        let resp: GetBucketLifecycleResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.rules.len(), 1);
+        assert_eq!(resp.rules[0].id, "delete-logs");
+        assert_eq!(resp.rules[0].prefix, "logs/");
+        assert_eq!(resp.rules[0].status, "Enabled");
+        assert_eq!(resp.rules[0].expiration.as_ref().unwrap().days, Some(30));
+    }
+
+    #[test]
+    fn deserialize_get_bucket_lifecycle_with_transition() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+    <Rule>
+        <ID>archive-rule</ID>
+        <Prefix>archive/</Prefix>
+        <Status>Enabled</Status>
+        <Transition>
+            <Days>90</Days>
+            <StorageClass>Archive</StorageClass>
+        </Transition>
+    </Rule>
+</LifecycleConfiguration>"#;
+        let resp: GetBucketLifecycleResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.rules.len(), 1);
+        assert_eq!(resp.rules[0].transitions.len(), 1);
+        assert_eq!(resp.rules[0].transitions[0].days, 90);
+        assert_eq!(
+            resp.rules[0].transitions[0].storage_class,
+            StorageClass::Archive
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_lifecycle_with_date() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+    <Rule>
+        <ID>expire-on-date</ID>
+        <Prefix>temp/</Prefix>
+        <Status>Enabled</Status>
+        <Expiration>
+            <Date>2025-01-01T00:00:00.000Z</Date>
+        </Expiration>
+    </Rule>
+</LifecycleConfiguration>"#;
+        let resp: GetBucketLifecycleResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.rules.len(), 1);
+        assert_eq!(
+            resp.rules[0].expiration.as_ref().unwrap().date,
+            Some("2025-01-01T00:00:00.000Z".to_string())
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_encryption_response_aes256() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<ServerSideEncryptionConfiguration>
+    <Rule>
+        <ApplyServerSideEncryptionByDefault>AES256</ApplyServerSideEncryptionByDefault>
+    </Rule>
+</ServerSideEncryptionConfiguration>"#;
+        let resp: GetBucketEncryptionResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.rule.apply_server_side_encryption_by_default,
+            ServerSideEncryption::AES256
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_encryption_response_kms() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<ServerSideEncryptionConfiguration>
+    <Rule>
+        <ApplyServerSideEncryptionByDefault>KMS</ApplyServerSideEncryptionByDefault>
+    </Rule>
+</ServerSideEncryptionConfiguration>"#;
+        let resp: GetBucketEncryptionResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.rule.apply_server_side_encryption_by_default,
+            ServerSideEncryption::KMS
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_logging_response() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<BucketLoggingStatus>
+    <LoggingEnabled>
+        <TargetBucket>my-log-bucket</TargetBucket>
+        <TargetPrefix>logs/</TargetPrefix>
+    </LoggingEnabled>
+</BucketLoggingStatus>"#;
+        let resp: GetBucketLoggingResponse = quick_xml::de::from_str(xml).unwrap();
+        let logging = resp.logging_enabled.unwrap();
+        assert_eq!(logging.target_bucket, "my-log-bucket");
+        assert_eq!(logging.target_prefix, "logs/");
+    }
+
+    #[test]
+    fn deserialize_get_bucket_logging_response_no_prefix() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<BucketLoggingStatus>
+    <LoggingEnabled>
+        <TargetBucket>my-log-bucket</TargetBucket>
+    </LoggingEnabled>
+</BucketLoggingStatus>"#;
+        let resp: GetBucketLoggingResponse = quick_xml::de::from_str(xml).unwrap();
+        let logging = resp.logging_enabled.unwrap();
+        assert_eq!(logging.target_bucket, "my-log-bucket");
+        assert!(logging.target_prefix.is_empty());
+    }
+
+    #[test]
+    fn deserialize_get_bucket_logging_response_disabled() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<BucketLoggingStatus>
+</BucketLoggingStatus>"#;
+        let resp: GetBucketLoggingResponse = quick_xml::de::from_str(xml).unwrap();
+        assert!(resp.logging_enabled.is_none());
     }
 }
