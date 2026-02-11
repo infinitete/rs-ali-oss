@@ -1,6 +1,6 @@
-//! Bucket operation request types: Create, Delete, List, GetInfo, ACL.
+//! Bucket operation request types: Create, Delete, List, GetInfo, ACL, CORS, Referer, Policy, Versioning, Lifecycle, Encryption, Logging.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::{OssError, Result};
 use crate::types::common::{BucketAcl, BucketName, ServerSideEncryption, StorageClass};
@@ -839,12 +839,14 @@ impl LifecycleRule {
 }
 
 /// Lifecycle rule status.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Deserialize, Serialize)]
 pub enum LifecycleRuleStatus {
     /// Rule is enabled.
     #[default]
+    #[serde(rename = "Enabled")]
     Enabled,
     /// Rule is disabled.
+    #[serde(rename = "Disabled")]
     Disabled,
 }
 
@@ -1351,7 +1353,15 @@ pub(crate) struct EncryptionConfigurationXml {
 #[derive(Debug, Serialize)]
 pub(crate) struct EncryptionRuleXml {
     #[serde(rename = "ApplyServerSideEncryptionByDefault")]
-    pub apply_server_side_encryption_by_default: ServerSideEncryption,
+    pub apply_server_side_encryption_by_default: ApplyServerSideEncryptionByDefaultXml,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ApplyServerSideEncryptionByDefaultXml {
+    #[serde(rename = "SSEAlgorithm")]
+    pub sse_algorithm: ServerSideEncryption,
+    #[serde(rename = "KMSMasterKeyID", skip_serializing_if = "Option::is_none")]
+    pub kms_master_key_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1883,13 +1893,15 @@ mod tests {
     fn encryption_configuration_xml_serializes() {
         let config = EncryptionConfigurationXml {
             rule: EncryptionRuleXml {
-                apply_server_side_encryption_by_default: ServerSideEncryption::AES256,
+                apply_server_side_encryption_by_default: ApplyServerSideEncryptionByDefaultXml {
+                    sse_algorithm: ServerSideEncryption::AES256,
+                    kms_master_key_id: None,
+                },
             },
         };
         let xml = quick_xml::se::to_string(&config).unwrap();
-        assert!(xml.contains(
-            "<ApplyServerSideEncryptionByDefault>AES256</ApplyServerSideEncryptionByDefault>"
-        ));
+        assert!(xml.contains("<ApplyServerSideEncryptionByDefault>"));
+        assert!(xml.contains("<SSEAlgorithm>AES256</SSEAlgorithm>"));
     }
 
     #[test]

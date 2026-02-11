@@ -239,6 +239,9 @@ pub struct GetBucketInfoResponse {
     /// The bucket metadata.
     #[serde(rename = "Bucket")]
     pub bucket: BucketInfoDetail,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Detailed bucket metadata from GetBucketInfo.
@@ -444,6 +447,8 @@ pub struct MultipartUploadInfo {
 pub struct GetBucketLocationResponse {
     /// The region/location string (e.g., "oss-cn-hangzhou").
     pub location: String,
+    /// OSS request ID.
+    pub request_id: Option<String>,
 }
 
 /// Internal XML wrapper for deserializing `<LocationConstraint>`.
@@ -513,6 +518,9 @@ pub struct GetBucketAclResponse {
     /// Access control list.
     #[serde(rename = "AccessControlList")]
     pub access_control_list: BucketAccessControlList,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Bucket owner information.
@@ -551,6 +559,9 @@ pub struct GetBucketCorsResponse {
     /// Whether to return Vary: Origin header.
     #[serde(rename = "ResponseVary", default)]
     pub response_vary: bool,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// A CORS rule from GetBucketCors response.
@@ -606,6 +617,9 @@ pub struct GetBucketRefererResponse {
     /// Referer blacklist (optional).
     #[serde(rename = "RefererBlacklist", default)]
     pub referer_blacklist: Option<RefererBlacklist>,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Referer whitelist container.
@@ -639,6 +653,8 @@ pub struct PutBucketPolicyResponse {
 pub struct GetBucketPolicyResponse {
     /// The bucket policy as a JSON string.
     pub policy: String,
+    /// OSS request ID.
+    pub request_id: Option<String>,
 }
 
 /// Response from a DeleteBucketPolicy operation.
@@ -662,6 +678,9 @@ pub struct GetBucketVersioningResponse {
     /// The versioning status.
     #[serde(rename = "Status")]
     pub status: Option<crate::types::common::VersioningStatus>,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Response from a PutBucketLifecycle operation.
@@ -678,6 +697,9 @@ pub struct GetBucketLifecycleResponse {
     /// Lifecycle rules.
     #[serde(rename = "Rule", default)]
     pub rules: Vec<LifecycleRuleResponse>,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// A lifecycle rule from GetBucketLifecycle response.
@@ -691,7 +713,7 @@ pub struct LifecycleRuleResponse {
     pub prefix: String,
     /// Rule status.
     #[serde(rename = "Status")]
-    pub status: String,
+    pub status: crate::types::request::LifecycleRuleStatus,
     /// Expiration configuration.
     #[serde(rename = "Expiration", default)]
     pub expiration: Option<LifecycleExpirationResponse>,
@@ -718,8 +740,11 @@ pub struct LifecycleTransitionResponse {
     #[serde(rename = "StorageClass")]
     pub storage_class: StorageClass,
     /// Days until transition.
-    #[serde(rename = "Days")]
-    pub days: u32,
+    #[serde(rename = "Days", default)]
+    pub days: Option<u32>,
+    /// Transition date.
+    #[serde(rename = "CreatedBeforeDate", default)]
+    pub date: Option<String>,
 }
 
 /// Response from a DeleteBucketLifecycle operation.
@@ -743,14 +768,28 @@ pub struct GetBucketEncryptionResponse {
     /// Encryption configuration.
     #[serde(rename = "Rule")]
     pub rule: EncryptionRuleResponse,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Encryption rule from GetBucketEncryption response.
 #[derive(Debug, Clone, Deserialize)]
 pub struct EncryptionRuleResponse {
-    /// Encryption algorithm.
+    /// Encryption algorithm configuration.
     #[serde(rename = "ApplyServerSideEncryptionByDefault")]
-    pub apply_server_side_encryption_by_default: ServerSideEncryption,
+    pub apply_server_side_encryption_by_default: ApplyServerSideEncryptionByDefaultResponse,
+}
+
+/// Server-side encryption configuration from GetBucketEncryption.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ApplyServerSideEncryptionByDefaultResponse {
+    /// Encryption algorithm (AES256 or KMS).
+    #[serde(rename = "SSEAlgorithm")]
+    pub sse_algorithm: ServerSideEncryption,
+    /// KMS master key ID (only for KMS encryption).
+    #[serde(rename = "KMSMasterKeyID", default)]
+    pub kms_master_key_id: Option<String>,
 }
 
 /// Response from a DeleteBucketEncryption operation.
@@ -776,6 +815,9 @@ pub struct GetBucketLoggingResponse {
     /// Logging configuration (None if logging is not enabled).
     #[serde(rename = "LoggingEnabled", default)]
     pub logging_enabled: Option<LoggingEnabled>,
+    /// OSS request ID.
+    #[serde(skip)]
+    pub request_id: Option<String>,
 }
 
 /// Logging enabled configuration from GetBucketLogging.
@@ -1384,7 +1426,10 @@ mod tests {
         assert_eq!(resp.rules.len(), 1);
         assert_eq!(resp.rules[0].id, "delete-logs");
         assert_eq!(resp.rules[0].prefix, "logs/");
-        assert_eq!(resp.rules[0].status, "Enabled");
+        assert_eq!(
+            resp.rules[0].status,
+            crate::types::request::LifecycleRuleStatus::Enabled
+        );
         assert_eq!(resp.rules[0].expiration.as_ref().unwrap().days, Some(30));
     }
 
@@ -1405,10 +1450,38 @@ mod tests {
         let resp: GetBucketLifecycleResponse = quick_xml::de::from_str(xml).unwrap();
         assert_eq!(resp.rules.len(), 1);
         assert_eq!(resp.rules[0].transitions.len(), 1);
-        assert_eq!(resp.rules[0].transitions[0].days, 90);
+        assert_eq!(resp.rules[0].transitions[0].days, Some(90));
         assert_eq!(
             resp.rules[0].transitions[0].storage_class,
             StorageClass::Archive
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_lifecycle_with_transition_date() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+    <Rule>
+        <ID>transition-date-rule</ID>
+        <Prefix>transition/</Prefix>
+        <Status>Enabled</Status>
+        <Transition>
+            <CreatedBeforeDate>2025-01-01T00:00:00.000Z</CreatedBeforeDate>
+            <StorageClass>IA</StorageClass>
+        </Transition>
+    </Rule>
+</LifecycleConfiguration>"#;
+        let resp: GetBucketLifecycleResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(resp.rules.len(), 1);
+        assert_eq!(resp.rules[0].transitions.len(), 1);
+        assert_eq!(resp.rules[0].transitions[0].days, None);
+        assert_eq!(
+            resp.rules[0].transitions[0].date,
+            Some("2025-01-01T00:00:00.000Z".to_string())
+        );
+        assert_eq!(
+            resp.rules[0].transitions[0].storage_class,
+            StorageClass::InfrequentAccess
         );
     }
 
@@ -1438,12 +1511,16 @@ mod tests {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <ServerSideEncryptionConfiguration>
     <Rule>
-        <ApplyServerSideEncryptionByDefault>AES256</ApplyServerSideEncryptionByDefault>
+        <ApplyServerSideEncryptionByDefault>
+            <SSEAlgorithm>AES256</SSEAlgorithm>
+        </ApplyServerSideEncryptionByDefault>
     </Rule>
 </ServerSideEncryptionConfiguration>"#;
         let resp: GetBucketEncryptionResponse = quick_xml::de::from_str(xml).unwrap();
         assert_eq!(
-            resp.rule.apply_server_side_encryption_by_default,
+            resp.rule
+                .apply_server_side_encryption_by_default
+                .sse_algorithm,
             ServerSideEncryption::AES256
         );
     }
@@ -1453,13 +1530,49 @@ mod tests {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <ServerSideEncryptionConfiguration>
     <Rule>
-        <ApplyServerSideEncryptionByDefault>KMS</ApplyServerSideEncryptionByDefault>
+        <ApplyServerSideEncryptionByDefault>
+            <SSEAlgorithm>KMS</SSEAlgorithm>
+            <KMSMasterKeyID>test-key-id</KMSMasterKeyID>
+        </ApplyServerSideEncryptionByDefault>
     </Rule>
 </ServerSideEncryptionConfiguration>"#;
         let resp: GetBucketEncryptionResponse = quick_xml::de::from_str(xml).unwrap();
         assert_eq!(
-            resp.rule.apply_server_side_encryption_by_default,
+            resp.rule
+                .apply_server_side_encryption_by_default
+                .sse_algorithm,
             ServerSideEncryption::KMS
+        );
+        assert_eq!(
+            resp.rule
+                .apply_server_side_encryption_by_default
+                .kms_master_key_id,
+            Some("test-key-id".to_string())
+        );
+    }
+
+    #[test]
+    fn deserialize_get_bucket_encryption_response_kms_no_key() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<ServerSideEncryptionConfiguration>
+    <Rule>
+        <ApplyServerSideEncryptionByDefault>
+            <SSEAlgorithm>KMS</SSEAlgorithm>
+        </ApplyServerSideEncryptionByDefault>
+    </Rule>
+</ServerSideEncryptionConfiguration>"#;
+        let resp: GetBucketEncryptionResponse = quick_xml::de::from_str(xml).unwrap();
+        assert_eq!(
+            resp.rule
+                .apply_server_side_encryption_by_default
+                .sse_algorithm,
+            ServerSideEncryption::KMS
+        );
+        assert_eq!(
+            resp.rule
+                .apply_server_side_encryption_by_default
+                .kms_master_key_id,
+            None
         );
     }
 

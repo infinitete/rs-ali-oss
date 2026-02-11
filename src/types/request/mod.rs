@@ -31,10 +31,11 @@ fn validate_metadata_key(key: &str) -> Result<()> {
 }
 
 pub(crate) use bucket::{
-    CorsConfigurationXml, CorsRuleXml, EncryptionConfigurationXml, EncryptionRuleXml,
-    LifecycleConfigurationXml, LifecycleExpirationXml, LifecycleRuleXml, LifecycleTransitionXml,
-    LoggingConfigurationXml, LoggingEnabledXml, RefererBlacklistXml, RefererConfigurationXml,
-    RefererListXml, VersioningConfigurationXml,
+    ApplyServerSideEncryptionByDefaultXml, CorsConfigurationXml, CorsRuleXml,
+    EncryptionConfigurationXml, EncryptionRuleXml, LifecycleConfigurationXml,
+    LifecycleExpirationXml, LifecycleRuleXml, LifecycleTransitionXml, LoggingConfigurationXml,
+    LoggingEnabledXml, RefererBlacklistXml, RefererConfigurationXml, RefererListXml,
+    VersioningConfigurationXml,
 };
 pub use bucket::{
     CorsRule, CreateBucketRequest, CreateBucketRequestBuilder, DeleteBucketCorsRequest,

@@ -5,18 +5,18 @@ use reqwest::Method;
 use crate::client::{OssClient, header_opt, parse_xml, serialize_xml};
 use crate::error::Result;
 use crate::types::request::{
-    CorsConfigurationXml, CorsRuleXml, CreateBucketRequest, DeleteBucketCorsRequest,
-    DeleteBucketEncryptionRequest, DeleteBucketLifecycleRequest, DeleteBucketLoggingRequest,
-    DeleteBucketPolicyRequest, DeleteBucketRequest, EncryptionConfigurationXml, EncryptionRuleXml,
-    GetBucketAclRequest, GetBucketCorsRequest, GetBucketEncryptionRequest, GetBucketInfoRequest,
-    GetBucketLifecycleRequest, GetBucketLocationRequest, GetBucketLoggingRequest,
-    GetBucketPolicyRequest, GetBucketRefererRequest, GetBucketVersioningRequest,
-    LifecycleConfigurationXml, LifecycleExpirationXml, LifecycleRuleXml, LifecycleTransitionXml,
-    ListBucketsRequest, LoggingConfigurationXml, LoggingEnabledXml, PutBucketAclRequest,
-    PutBucketCorsRequest, PutBucketEncryptionRequest, PutBucketLifecycleRequest,
-    PutBucketLoggingRequest, PutBucketPolicyRequest, PutBucketRefererRequest,
-    PutBucketVersioningRequest, RefererBlacklistXml, RefererConfigurationXml, RefererListXml,
-    VersioningConfigurationXml,
+    ApplyServerSideEncryptionByDefaultXml, CorsConfigurationXml, CorsRuleXml, CreateBucketRequest,
+    DeleteBucketCorsRequest, DeleteBucketEncryptionRequest, DeleteBucketLifecycleRequest,
+    DeleteBucketLoggingRequest, DeleteBucketPolicyRequest, DeleteBucketRequest,
+    EncryptionConfigurationXml, EncryptionRuleXml, GetBucketAclRequest, GetBucketCorsRequest,
+    GetBucketEncryptionRequest, GetBucketInfoRequest, GetBucketLifecycleRequest,
+    GetBucketLocationRequest, GetBucketLoggingRequest, GetBucketPolicyRequest,
+    GetBucketRefererRequest, GetBucketVersioningRequest, LifecycleConfigurationXml,
+    LifecycleExpirationXml, LifecycleRuleXml, LifecycleTransitionXml, ListBucketsRequest,
+    LoggingConfigurationXml, LoggingEnabledXml, PutBucketAclRequest, PutBucketCorsRequest,
+    PutBucketEncryptionRequest, PutBucketLifecycleRequest, PutBucketLoggingRequest,
+    PutBucketPolicyRequest, PutBucketRefererRequest, PutBucketVersioningRequest,
+    RefererBlacklistXml, RefererConfigurationXml, RefererListXml, VersioningConfigurationXml,
 };
 use crate::types::response::{
     CreateBucketResponse, DeleteBucketCorsResponse, DeleteBucketEncryptionResponse,
@@ -120,9 +120,11 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
 
         let body = response.text().await?;
-        let info_resp: GetBucketInfoResponse = parse_xml(&body)?;
+        let mut info_resp: GetBucketInfoResponse = parse_xml(&body)?;
+        info_resp.request_id = request_id;
 
         Ok(info_resp)
     }
@@ -136,12 +138,14 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
 
         let body = response.text().await?;
         let xml: crate::types::response::LocationConstraintXml = parse_xml(&body)?;
 
         Ok(GetBucketLocationResponse {
             location: xml.location,
+            request_id,
         })
     }
 
@@ -201,8 +205,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketAclResponse = parse_xml(&body)?;
+        let mut resp: GetBucketAclResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -296,8 +302,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketCorsResponse = parse_xml(&body)?;
+        let mut resp: GetBucketCorsResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -408,8 +416,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketRefererResponse = parse_xml(&body)?;
+        let mut resp: GetBucketRefererResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -475,8 +485,9 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let policy = response.text().await?;
-        Ok(GetBucketPolicyResponse { policy })
+        Ok(GetBucketPolicyResponse { policy, request_id })
     }
 
     /// Delete the authorization policy of a bucket.
@@ -579,8 +590,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketVersioningResponse = parse_xml(&body)?;
+        let mut resp: GetBucketVersioningResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -691,8 +704,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketLifecycleResponse = parse_xml(&body)?;
+        let mut resp: GetBucketLifecycleResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -747,8 +762,12 @@ impl OssClient {
         let url = self.build_url(Some(&request.bucket), None, &[("encryption", "")])?;
         let resource_path = format!("/{}/", request.bucket);
 
+        let sse_config = ApplyServerSideEncryptionByDefaultXml {
+            sse_algorithm: request.encryption,
+            kms_master_key_id: None,
+        };
         let rule = EncryptionRuleXml {
-            apply_server_side_encryption_by_default: request.encryption,
+            apply_server_side_encryption_by_default: sse_config,
         };
 
         let config = EncryptionConfigurationXml { rule };
@@ -777,7 +796,7 @@ impl OssClient {
     ///     .bucket(BucketName::new("my-bucket")?)
     ///     .build()?;
     /// let response = client.get_bucket_encryption(request).await?;
-    /// println!("Encryption: {}", response.rule.apply_server_side_encryption_by_default);
+    /// println!("Encryption: {}", response.rule.apply_server_side_encryption_by_default.sse_algorithm);
     /// # Ok(())
     /// # }
     /// ```
@@ -789,8 +808,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketEncryptionResponse = parse_xml(&body)?;
+        let mut resp: GetBucketEncryptionResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
@@ -893,8 +914,10 @@ impl OssClient {
         let resource_path = format!("/{}/", request.bucket);
         let http_req = self.http_client().request(Method::GET, url).build()?;
         let response = self.execute(http_req, &resource_path).await?;
+        let request_id = header_opt(&response, "x-oss-request-id");
         let body = response.text().await?;
-        let resp: GetBucketLoggingResponse = parse_xml(&body)?;
+        let mut resp: GetBucketLoggingResponse = parse_xml(&body)?;
+        resp.request_id = request_id;
         Ok(resp)
     }
 
