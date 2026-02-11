@@ -192,6 +192,47 @@ impl fmt::Display for ObjectAcl {
     }
 }
 
+/// Bucket access control level.
+///
+/// Defines the access permissions for a bucket. Each level grants
+/// different permissions to the public and authenticated users.
+///
+/// # Variants
+///
+/// * `Private` - Only the bucket owner has access
+/// * `PublicRead` - Owner has full access, public has read access
+/// * `PublicReadWrite` - Everyone has full access (use with caution)
+///
+/// # Examples
+///
+/// ```
+/// # use rs_ali_oss::types::BucketAcl;
+/// let acl = BucketAcl::PublicRead;
+/// assert_eq!(acl.to_string(), "public-read");
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BucketAcl {
+    /// Private access (bucket owner only).
+    #[serde(rename = "private")]
+    Private,
+    /// Public read access.
+    #[serde(rename = "public-read")]
+    PublicRead,
+    /// Public read-write access.
+    #[serde(rename = "public-read-write")]
+    PublicReadWrite,
+}
+
+impl fmt::Display for BucketAcl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Private => write!(f, "private"),
+            Self::PublicRead => write!(f, "public-read"),
+            Self::PublicReadWrite => write!(f, "public-read-write"),
+        }
+    }
+}
+
 /// Metadata directive for CopyObject operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MetadataDirective {
@@ -208,6 +249,109 @@ impl fmt::Display for MetadataDirective {
         match self {
             Self::Copy => write!(f, "COPY"),
             Self::Replace => write!(f, "REPLACE"),
+        }
+    }
+}
+
+/// HTTP methods allowed in CORS rules.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CorsHttpMethod {
+    /// GET method.
+    #[serde(rename = "GET")]
+    Get,
+    /// PUT method.
+    #[serde(rename = "PUT")]
+    Put,
+    /// DELETE method.
+    #[serde(rename = "DELETE")]
+    Delete,
+    /// POST method.
+    #[serde(rename = "POST")]
+    Post,
+    /// HEAD method.
+    #[serde(rename = "HEAD")]
+    Head,
+}
+
+impl fmt::Display for CorsHttpMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Get => write!(f, "GET"),
+            Self::Put => write!(f, "PUT"),
+            Self::Delete => write!(f, "DELETE"),
+            Self::Post => write!(f, "POST"),
+            Self::Head => write!(f, "HEAD"),
+        }
+    }
+}
+
+/// Bucket versioning status.
+///
+/// Controls whether versioning is enabled for objects in a bucket.
+/// Once enabled, versioning cannot be disabled, only suspended.
+///
+/// # Variants
+///
+/// * `Enabled` - Versioning is enabled for the bucket
+/// * `Suspended` - Versioning is suspended (no new versions created)
+///
+/// # Examples
+///
+/// ```
+/// # use rs_ali_oss::types::VersioningStatus;
+/// let status = VersioningStatus::Enabled;
+/// assert_eq!(status.to_string(), "Enabled");
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum VersioningStatus {
+    /// Versioning is enabled.
+    #[serde(rename = "Enabled")]
+    Enabled,
+    /// Versioning is suspended.
+    #[serde(rename = "Suspended")]
+    Suspended,
+}
+
+impl fmt::Display for VersioningStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Enabled => write!(f, "Enabled"),
+            Self::Suspended => write!(f, "Suspended"),
+        }
+    }
+}
+
+/// Server-side encryption algorithm for bucket and objects.
+///
+/// Defines the encryption method used for server-side encryption.
+///
+/// # Variants
+///
+/// * `AES256` - AES-256 server-side encryption
+/// * `KMS` - Key Management Service encryption
+///
+/// # Examples
+///
+/// ```
+/// # use rs_ali_oss::types::ServerSideEncryption;
+/// let sse = ServerSideEncryption::AES256;
+/// assert_eq!(sse.to_string(), "AES256");
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ServerSideEncryption {
+    /// AES-256 encryption.
+    #[serde(rename = "AES256")]
+    AES256,
+    /// KMS encryption.
+    #[serde(rename = "KMS")]
+    KMS,
+}
+
+impl fmt::Display for ServerSideEncryption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AES256 => write!(f, "AES256"),
+            Self::KMS => write!(f, "KMS"),
         }
     }
 }
@@ -316,6 +460,21 @@ mod tests {
     }
 
     #[test]
+    fn bucket_acl_display() {
+        assert_eq!(BucketAcl::Private.to_string(), "private");
+        assert_eq!(BucketAcl::PublicRead.to_string(), "public-read");
+        assert_eq!(BucketAcl::PublicReadWrite.to_string(), "public-read-write");
+    }
+
+    #[test]
+    fn bucket_acl_serde_round_trip() {
+        let acl = BucketAcl::PublicRead;
+        let json = serde_json::to_string(&acl).unwrap();
+        let deserialized: BucketAcl = serde_json::from_str(&json).unwrap();
+        assert_eq!(acl, deserialized);
+    }
+
+    #[test]
     fn metadata_directive_display() {
         assert_eq!(MetadataDirective::Copy.to_string(), "COPY");
         assert_eq!(MetadataDirective::Replace.to_string(), "REPLACE");
@@ -327,6 +486,51 @@ mod tests {
         let json = serde_json::to_string(&md).unwrap();
         let deserialized: MetadataDirective = serde_json::from_str(&json).unwrap();
         assert_eq!(md, deserialized);
+    }
+
+    #[test]
+    fn cors_http_method_display() {
+        assert_eq!(CorsHttpMethod::Get.to_string(), "GET");
+        assert_eq!(CorsHttpMethod::Put.to_string(), "PUT");
+        assert_eq!(CorsHttpMethod::Delete.to_string(), "DELETE");
+        assert_eq!(CorsHttpMethod::Post.to_string(), "POST");
+        assert_eq!(CorsHttpMethod::Head.to_string(), "HEAD");
+    }
+
+    #[test]
+    fn cors_http_method_serde_round_trip() {
+        let method = CorsHttpMethod::Get;
+        let json = serde_json::to_string(&method).unwrap();
+        let deserialized: CorsHttpMethod = serde_json::from_str(&json).unwrap();
+        assert_eq!(method, deserialized);
+    }
+
+    #[test]
+    fn versioning_status_display() {
+        assert_eq!(VersioningStatus::Enabled.to_string(), "Enabled");
+        assert_eq!(VersioningStatus::Suspended.to_string(), "Suspended");
+    }
+
+    #[test]
+    fn versioning_status_serde_round_trip() {
+        let status = VersioningStatus::Enabled;
+        let json = serde_json::to_string(&status).unwrap();
+        let deserialized: VersioningStatus = serde_json::from_str(&json).unwrap();
+        assert_eq!(status, deserialized);
+    }
+
+    #[test]
+    fn server_side_encryption_display() {
+        assert_eq!(ServerSideEncryption::AES256.to_string(), "AES256");
+        assert_eq!(ServerSideEncryption::KMS.to_string(), "KMS");
+    }
+
+    #[test]
+    fn server_side_encryption_serde_round_trip() {
+        let sse = ServerSideEncryption::KMS;
+        let json = serde_json::to_string(&sse).unwrap();
+        let deserialized: ServerSideEncryption = serde_json::from_str(&json).unwrap();
+        assert_eq!(sse, deserialized);
     }
 
     #[test]

@@ -173,6 +173,19 @@ async fn main() -> Result<()> {
 | `get_bucket_info` | Get bucket metadata |
 | `get_bucket_location` | Get bucket data center location |
 
+### Bucket Management
+
+| Method | Description |
+|--------|-------------|
+| `put_bucket_acl` / `get_bucket_acl` | Get/Set bucket ACL |
+| `put_bucket_cors` / `get_bucket_cors` / `delete_bucket_cors` | CORS configuration |
+| `put_bucket_referer` / `get_bucket_referer` | Hotlink protection (Referer) |
+| `put_bucket_policy` / `get_bucket_policy` / `delete_bucket_policy` | Bucket authorization policy |
+| `put_bucket_versioning` / `get_bucket_versioning` | Versioning control |
+| `put_bucket_lifecycle` / `get_bucket_lifecycle` / `delete_bucket_lifecycle` | Lifecycle management |
+| `put_bucket_encryption` / `get_bucket_encryption` / `delete_bucket_encryption` | Server-side encryption |
+| `put_bucket_logging` / `get_bucket_logging` / `delete_bucket_logging` | Access logging |
+
 ### Multipart Upload
 
 | Method | Description |
@@ -201,36 +214,28 @@ async fn main() -> Result<()> {
 
 ## API Coverage
 
-This SDK focuses on **core data-plane operations**. Bucket management/policy APIs are not yet implemented.
-
 | Category | Implemented | Total | Coverage |
 |----------|-------------|-------|----------|
 | Object operations | 14 | ~19 | ~74% |
 | Bucket basics (CRUD) | 5 | ~5 | 100% |
-| Bucket management/policy | 0 | ~40 | 0% |
+| Bucket management/policy | 21 | ~40 | ~52% |
 | Multipart upload | 6 | ~7 | ~86% |
 | Presigned URLs | 2 | 2 | 100% |
 
 ### Not Yet Implemented
 
 <details>
-<summary>Bucket management APIs (lifecycle, versioning, encryption, CORS, etc.)</summary>
+<summary>Additional bucket management APIs</summary>
 
-- Bucket ACL — `PutBucketAcl`, `GetBucketAcl`
-- Lifecycle — `PutBucketLifecycle`, `GetBucketLifecycle`, `DeleteBucketLifecycle`
-- Versioning — `PutBucketVersioning`, `GetBucketVersioning`, `ListObjectVersions`
-- Server-side encryption — `PutBucketEncryption`, `GetBucketEncryption`, `DeleteBucketEncryption`
-- Logging — `PutBucketLogging`, `GetBucketLogging`, `DeleteBucketLogging`
+- Versioning list — `ListObjectVersions`
 - Static website — `PutBucketWebsite`, `GetBucketWebsite`, `DeleteBucketWebsite`
-- Hotlink protection — `PutBucketReferer`, `GetBucketReferer`
-- CORS — `PutBucketCors`, `GetBucketCors`, `DeleteBucketCors`
-- Bucket policy — `PutBucketPolicy`, `GetBucketPolicy`, `DeleteBucketPolicy`
 - Inventory — `PutBucketInventory`, `GetBucketInventory`, `ListBucketInventory`, `DeleteBucketInventory`
-- Cross-region replication — `PutBucketReplication`, `GetBucketReplication`, `DeleteBucketReplication`, etc.
-- WORM (compliance retention) — `InitiateBucketWorm`, `CompleteBucketWorm`, etc.
+- Cross-region replication — `PutBucketReplication`, `GetBucketReplication`, `DeleteBucketReplication`, `GetBucketReplicationProgress`
+- WORM (compliance retention) — `InitiateBucketWorm`, `AbortBucketWorm`, `CompleteBucketWorm`, `ExtendBucketWorm`, `GetBucketWorm`
 - Transfer acceleration — `PutBucketTransferAcceleration`, `GetBucketTransferAcceleration`
 - Requester pays — `PutBucketRequestPayment`, `GetBucketRequestPayment`
 - Bucket tags — `PutBucketTags`, `GetBucketTags`, `DeleteBucketTags`
+- Bucket statistics — `GetBucketStat`
 
 </details>
 
