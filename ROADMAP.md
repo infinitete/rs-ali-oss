@@ -6,19 +6,17 @@
 
 ## 当前进度
 
-**v0.1.x (当前版本)**: 核心数据面 + 部分存储桶管理功能已实现
+**v0.1.4 (当前版本)**: 核心数据面 + 存储桶管理功能已实现
 
 - ✅ 对象操作（14 个 API）：~74% 覆盖率
 - ✅ 存储桶基础操作（5 个 API）：100% 覆盖率
-- 🚧 存储桶管理/策略（21/~40 个 API）：~52% 覆盖率
+- ✅ 存储桶管理/策略（21/~40 个 API）：~52% 覆盖率
   - ✅ ACL、CORS、Referer、Policy
   - ✅ Lifecycle、Versioning
   - ✅ Encryption、Logging
   - 📋 Website、Replication、Inventory、Tags、WORM、TransferAcceleration、RequestPayment 等
 - ✅ 分片上传（6 个 API）：~86% 覆盖率
 - ✅ 预签名 URL（2 个 API）：100% 覆盖率
-
----
 
 ---
 
@@ -44,20 +42,18 @@
 
 ---
 
-## v0.2.0 — 存储桶策略与对象增强 🚧
+## v0.2.0 — 存储桶策略与对象增强 ✅ (v0.1.4 已完成存储桶部分)
 
 **目标**：补全生产环境最常用的存储桶管理 API 和缺失的对象操作。
 
 ### Bucket 访问控制与策略
 
-| 功能 | API | 优先级 |
-|------|-----|--------|
-| 存储桶 ACL | `PutBucketAcl`、`GetBucketAcl` | 🔴 高 |
-| 跨域规则 (CORS) | `PutBucketCors`、`GetBucketCors`、`DeleteBucketCors` | 🔴 高 |
-| 防盗链 | `PutBucketReferer`、`GetBucketReferer` | 🟡 中 |
-| 授权策略 | `PutBucketPolicy`、`GetBucketPolicy`、`DeleteBucketPolicy` | 🟡 中 |
-
-✅ 已完成：ACL、CORS、Referer、Policy
+| 功能 | API | 状态 |
+|------|-----|------|
+| 存储桶 ACL | `PutBucketAcl`、`GetBucketAcl` | ✅ |
+| 跨域规则 (CORS) | `PutBucketCors`、`GetBucketCors`、`DeleteBucketCors` | ✅ |
+| 防盗链 | `PutBucketReferer`、`GetBucketReferer` | ✅ |
+| 授权策略 | `PutBucketPolicy`、`GetBucketPolicy`、`DeleteBucketPolicy` | ✅ |
 
 ### 对象操作补全
 
@@ -77,25 +73,23 @@
 
 ---
 
-## v0.3.0 — 生命周期与版本控制 🚧
+## v0.3.0 — 生命周期与版本控制 ✅ (v0.1.4 已完成核心部分)
 
 **目标**：支持数据生命周期管理和版本化存储。
 
 ### 生命周期管理
 
-| 功能 | API | 优先级 |
-|------|-----|--------|
-| 生命周期规则 | `PutBucketLifecycle`、`GetBucketLifecycle`、`DeleteBucketLifecycle` | 🔴 高 |
+| 功能 | API | 状态 |
+|------|-----|------|
+| 生命周期规则 | `PutBucketLifecycle`、`GetBucketLifecycle`、`DeleteBucketLifecycle` | ✅ |
 
 ### 版本控制
 
-| 功能 | API | 优先级 |
-|------|-----|--------|
-| 版本控制开关 | `PutBucketVersioning`、`GetBucketVersioning` | 🔴 高 |
-| 版本列举 | `ListObjectVersions` | 🔴 高 |
-| 版本化对象操作 | 现有对象 API 添加 `versionId` 参数支持 | 🔴 高 |
-
-✅ 已完成：Lifecycle、Versioning (开关)
+| 功能 | API | 状态 |
+|------|-----|------|
+| 版本控制开关 | `PutBucketVersioning`、`GetBucketVersioning` | ✅ |
+| 版本列举 | `ListObjectVersions` | 📋 |
+| 版本化对象操作 | 现有对象 API 添加 `versionId` 参数支持 | 📋 |
 
 ### 存储桶标签与统计
 
@@ -106,18 +100,16 @@
 
 ---
 
-## v0.4.0 — 安全与加密 🚧
+## v0.4.0 — 安全与加密 ✅ (v0.1.4 已完成存储桶级加密)
 
 **目标**：完善数据安全能力。
 
 ### 服务端加密
 
-| 功能 | API | 优先级 |
-|------|-----|--------|
-| 存储桶默认加密 | `PutBucketEncryption`、`GetBucketEncryption`、`DeleteBucketEncryption` | 🔴 高 |
-| 对象级加密 | 请求中指定 SSE-OSS / SSE-KMS / SSE-C 头 | 🔴 高 |
-
-✅ 已完成：服务端加密（存储桶级）
+| 功能 | API | 状态 |
+|------|-----|------|
+| 存储桶默认加密 | `PutBucketEncryption`、`GetBucketEncryption`、`DeleteBucketEncryption` | ✅ |
+| 对象级加密 | 请求中指定 SSE-OSS / SSE-KMS / SSE-C 头 | 📋 |
 
 ### 合规保留 (WORM)
 
@@ -133,17 +125,15 @@
 
 ---
 
-## v0.5.0 — 运维与监控 🚧
+## v0.5.0 — 运维与监控 ✅ (v0.1.4 已完成日志部分)
 
 **目标**：支持日志、站点托管和跨区域复制等运维场景。
 
 ### 日志管理
 
-| 功能 | API | 优先级 |
-|------|-----|--------|
-| 访问日志 | `PutBucketLogging`、`GetBucketLogging`、`DeleteBucketLogging` | 🟡 中 |
-
-✅ 已完成：访问日志
+| 功能 | API | 状态 |
+|------|-----|------|
+| 访问日志 | `PutBucketLogging`、`GetBucketLogging`、`DeleteBucketLogging` | ✅ |
 
 ### 静态网站托管
 

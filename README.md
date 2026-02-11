@@ -9,7 +9,7 @@ A production-ready Rust SDK for [Alibaba Cloud Object Storage Service (OSS)](htt
 
 ## Features
 
-- **Core OSS API Coverage** — Object CRUD, bucket basics, multipart upload, presigned URLs, tagging, ACL (see [API Coverage](#api-coverage) for details)
+- **Core OSS API Coverage** — Object CRUD, bucket management (ACL, CORS, lifecycle, versioning, encryption, logging, policy, referer), multipart upload, presigned URLs, tagging (see [API Coverage](#api-coverage) for details)
 - **V4 Signature Authentication** — Secure request signing with OSS V4 signature algorithm
 - **Automatic Retry** — Exponential backoff with jitter for transient errors
 - **Transfer Manager** — Automatic multipart upload for large files with CRC64 checksum verification
@@ -415,13 +415,13 @@ src/
 │   └── v4.rs        # V4 signature algorithm
 ├── ops/
 │   ├── object.rs    # Object operations
-│   ├── bucket.rs    # Bucket operations
+│   ├── bucket.rs    # Bucket operations (26 methods)
 │   ├── multipart.rs # Multipart upload operations
 │   ├── presign.rs   # Presigned URL generation
 │   ├── paginator.rs # Auto-paginators
 │   └── transfer.rs  # Transfer Manager
 └── types/
-    ├── common.rs    # BucketName, ObjectKey, Region, StorageClass, ObjectAcl
+    ├── common.rs    # BucketName, ObjectKey, Region, StorageClass, ObjectAcl, BucketAcl, CorsHttpMethod, VersioningStatus, ServerSideEncryption
     ├── response.rs  # All response types
     └── request/     # All request builders
 ```

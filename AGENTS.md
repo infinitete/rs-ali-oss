@@ -79,14 +79,14 @@ rs-ali-oss/
 │   ├── ops/
 │   │   ├── mod.rs      # ops module root
 │   │   ├── object.rs   # object operations (14 methods)
-│   │   ├── bucket.rs   # bucket operations (5 methods)
+│   │   ├── bucket.rs   # bucket operations (26 methods: 5 CRUD + 21 management)
 │   │   ├── multipart.rs # multipart upload operations (6 methods)
 │   │   ├── presign.rs  # presigned URL generation
 │   │   ├── paginator.rs # auto-paginators
 │   │   └── transfer.rs # Transfer Manager (managed multipart upload)
 │   └── types/
 │       ├── mod.rs      # types module root
-│       ├── common.rs   # BucketName, ObjectKey, Region, StorageClass, ObjectAcl, MetadataDirective
+│       ├── common.rs   # BucketName, ObjectKey, Region, StorageClass, ObjectAcl, BucketAcl, CorsHttpMethod, VersioningStatus, ServerSideEncryption, MetadataDirective
 │       ├── response.rs # all response types
 │       └── request/    # all request builders
 │           ├── mod.rs
