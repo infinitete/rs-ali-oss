@@ -1,6 +1,6 @@
 [package]
 name = "rs-ali-oss"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 description = "Rust SDK for Alibaba Cloud Object Storage Service (OSS)"
 license = "MIT"
@@ -32,7 +32,7 @@ tracing = "0.1"
 md5 = { package = "md-5", version = "0.10" }
 zeroize = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["time"] }
-rs-ali-sts = { version = "0.1", optional = true }
+rs-ali-sts = { version = "0.1.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
@@ -40,5 +40,5 @@ serde_json = "1"
 wiremock = "0.6"
 temp-env = "0.3"
 chrono = "0.4"
-rs-ali-sts = "0.1"
+rs-ali-sts = "0.1.1"
 reqwest = { version = "0.12", features = ["stream"] }

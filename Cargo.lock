@@ -1167,7 +1167,7 @@ dependencies = [
 
 [[package]]
 name = "rs-ali-oss"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "base64",
  "bytes",
@@ -1194,18 +1194,20 @@ dependencies = [
 
 [[package]]
 name = "rs-ali-sts"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41c9f0e8c1b1fe8a65b3982deab159f3b9a43caf08704041bf192a042de81c28"
+checksum = "96fc6b5157ae030ce76fc402f2d0c2612a9fde11bbf71fc4c1aaf0679a9b837d"
 dependencies = [
  "base64",
  "chrono",
  "hmac",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
- "sha1",
+ "sha2",
  "thiserror",
+ "tokio",
  "uuid",
 ]
 
@@ -1366,17 +1368,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "sha1"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "digest",
 ]
 
 [[package]]
