@@ -187,6 +187,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1167,11 +1173,12 @@ dependencies = [
 
 [[package]]
 name = "rs-ali-oss"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "base64",
  "bytes",
  "chrono",
+ "dotenvy",
  "futures-util",
  "hex",
  "hmac",
@@ -1194,9 +1201,9 @@ dependencies = [
 
 [[package]]
 name = "rs-ali-sts"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96fc6b5157ae030ce76fc402f2d0c2612a9fde11bbf71fc4c1aaf0679a9b837d"
+checksum = "89d1217d90b5e01d2b6fa9f577ee21e6e6f112af0304ebdeb6afec49de7f184d"
 dependencies = [
  "base64",
  "chrono",
@@ -1205,6 +1212,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha1",
  "sha2",
  "thiserror",
  "tokio",
@@ -1368,6 +1376,17 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "sha1"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]
